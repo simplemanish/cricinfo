@@ -30,6 +30,7 @@ public class PlayerApplication {
         messageSource.setBasename("classpath:messages");
         messageSource.setDefaultEncoding("UTF-8");
         return messageSource;
+        
     }
 
     /**

@@ -2,8 +2,6 @@ package com.ms.player.validator;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,27 +12,41 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 import com.ms.player.form.PlayerForm;
-import com.ms.player.model.Player;
-import com.ms.player.model.Role;
-import com.ms.player.service.PlayerService;
-import com.ms.player.service.RoleService;
 
+/**
+ * This class responsible to validates date of birth in PlayerForm DTO.
+ * 
+ * <p>
+ * Validates format of dob and null check.
+ * </p>
+ * 
+ * Please see the {@link com.ms.player.validator.PlayerDobValidator} class
+ * 
+ * @author 047929
+ * @version 1.0.0
+ */
 @Component
 public class PlayerDobValidator implements Validator {
-	@Autowired
-	private PlayerService playerService;
-	@Autowired
-	private RoleService roleService;
+
+	/**
+	 * Message source to get language specific messages.
+	 */
 	@Autowired
 	private MessageSource messageSource;
 
 	Logger logger = LoggerFactory.getLogger(PlayerDobValidator.class);
 
+	/**
+	 * Supported class PlayerForm.
+	 */
 	@Override
 	public boolean supports(Class<?> aClass) {
 		return PlayerForm.class.equals(aClass);
 	}
 
+	/**
+	 * Validates format of dob and null check.
+	 */
 	@Override
 	public void validate(Object o, Errors errors) {
 		PlayerForm playerForm = (PlayerForm) o;

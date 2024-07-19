@@ -17,15 +17,21 @@
 ```
 	 http://localhost:8080/Api/v1/player
 ```
+   
 	* Get Player Details:
+   
 ```
 	 http://localhost:8080/Api/v1/player/1
 ```
+  
 	* Update Player Details:
+
 ```	
 	http://localhost:8080/Api/v1/player/1
 ```
+  
 	* Delete Player:
+   
 ```
 	 http://localhost:8080/Api/v1/player/1
 ```

@@ -1,6 +1,6 @@
 # Overview
 
-TBD
+Cricket app microservices specifications document which involves detailing of each microservices, eg purpose, scope, schema, dependencies, technologies, testing and endpoints.
 
 The application is divided into multiple microservices, each responsible for a specific functionality:
 

@@ -1,6 +1,8 @@
 package com.ms.player.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import java.text.ParseException;
@@ -25,13 +27,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.BindingResult;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ms.player.form.PlayerForm;
 import com.ms.player.model.Player;
 import com.ms.player.model.Role;
 import com.ms.player.service.PlayerService;
 import com.ms.player.service.RoleService;
+import com.ms.player.validator.PlayerDobValidator;
+import com.ms.player.validator.PlayerDuplicateValidator;
+import com.ms.player.validator.RoleValidator;
 
 /**
  * PlayerControllerTest is JUnit Test cases to test PlayerController REST API.
@@ -70,6 +77,28 @@ public class PlayerControllerTest {
 	RoleService roleService;
 
 	/**
+	 * Binding result.
+	 */
+	@MockBean
+	BindingResult bindingResult;
+
+	/**
+	 * Player date of birth validator.
+	 */
+	@MockBean
+	PlayerDobValidator playerDobValidator;
+	/**
+	 * Player duplicate validator.
+	 */
+	@MockBean
+	PlayerDuplicateValidator playerDuplicateValidator;
+	/**
+	 * Role validator.
+	 */
+	@MockBean
+	RoleValidator roleValidator;
+
+	/**
 	 * Inject mocks player controller.
 	 */
 	@InjectMocks
@@ -77,6 +106,7 @@ public class PlayerControllerTest {
 
 	Player player1 = new Player(1L, "Rishabh", "Pant", getDate("1997-10-04"), "Indian",
 			new HashSet<Role>(Set.of(new Role(1L), new Role(2L))));
+
 	Player player2 = new Player(2L, "player2", "lastname2", getDate("1997-10-05"), "Australian",
 			new HashSet<Role>(Set.of(new Role(2L))));
 	Player player3 = new Player(3L, "player3", "lastname3", getDate("1997-10-06"), "English",
@@ -87,6 +117,11 @@ public class PlayerControllerTest {
 			new HashSet<Role>(Set.of(new Role(1L))));
 
 	PlayerForm playerForm1 = new PlayerForm(1L, "Rishabh", "Pant", "1997-10-04", "Indian",
+			new HashSet<Long>(Set.of(1L, 2L)));
+
+	PlayerForm playerForm_firsname_3 = new PlayerForm(1L, "Ris", "Pant", "1997-10-04", "Indian",
+			new HashSet<Long>(Set.of(1L, 2L)));
+	PlayerForm playerForm_firsname_21 = new PlayerForm(1L, "Rishabh_9012345678901", "Pant", "1997-10-04", "Indian",
 			new HashSet<Long>(Set.of(1L, 2L)));
 
 	/**
@@ -104,7 +139,8 @@ public class PlayerControllerTest {
 	 */
 	@Test
 	public void getPlayerDetails_success() throws Exception {
-		when(playerService.getPlayerById(1L)).thenReturn(player1);
+		when(playerService.getPlayerById(anyLong())).thenReturn(player1);
+
 		MvcResult mvcResult = mockMvc
 				.perform(MockMvcRequestBuilders.get("/v1/player/1").accept(MediaType.APPLICATION_JSON)).andReturn();
 
@@ -143,6 +179,156 @@ public class PlayerControllerTest {
 		MvcResult mvcResult = mockMvc
 				.perform(MockMvcRequestBuilders.get("/v1/player/sdf").accept(MediaType.APPLICATION_JSON)).andReturn();
 		assertEquals(HttpStatus.BAD_REQUEST.value(), mvcResult.getResponse().getStatus());
+	}
+
+	/**
+	 * Test create player REST end-point for success.
+	 * 
+	 */
+	@Test
+	public void createPlayer_ok() {
+		when(playerService.save(player1)).thenReturn(player1);
+		MvcResult mvcResult;
+		try {
+			mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/v1/player/")
+					.content(new ObjectMapper().writeValueAsString(playerForm1)).contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaType.APPLICATION_JSON)).andReturn();
+			assertEquals(HttpStatus.CREATED.value(), mvcResult.getResponse().getStatus());
+			JSONObject resp = new JSONObject();
+			resp.put("message", "Player added successful");
+			assertEquals(resp.toString(), mvcResult.getResponse().getContentAsString());
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * Test create player REST end-point for bad req.
+	 * 
+	 */
+	@Test
+	public void createPlayer_bad_request() {
+		MvcResult mvcResult;
+		try {
+			// firstname < 4
+			mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/v1/player/")
+					.content(new ObjectMapper().writeValueAsString(playerForm_firsname_3))
+					.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)).andReturn();
+
+			when(bindingResult.hasErrors()).thenReturn(true);
+			assertEquals(HttpStatus.BAD_REQUEST.value(), mvcResult.getResponse().getStatus());
+			assertTrue(mvcResult.getResponse().getContentAsString().contains("error")
+					&& mvcResult.getResponse().getContentAsString().contains("firstname"));
+
+			// firstname > 20
+			mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/v1/player/")
+					.content(new ObjectMapper().writeValueAsString(playerForm_firsname_21))
+					.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)).andReturn();
+			assertEquals(HttpStatus.BAD_REQUEST.value(), mvcResult.getResponse().getStatus());
+			assertTrue(mvcResult.getResponse().getContentAsString().contains("error")
+					&& mvcResult.getResponse().getContentAsString().contains("firstname"));
+
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * Test update player REST end-point for success.
+	 * 
+	 */
+	@Test
+	public void updatePlayer_ok() {
+		when(playerService.getPlayerById(anyLong())).thenReturn(player1);
+		MvcResult mvcResult;
+		try {
+			mvcResult = mockMvc.perform(MockMvcRequestBuilders.put("/v1/player/1")
+					.content(new ObjectMapper().writeValueAsString(playerForm1)).contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaType.APPLICATION_JSON)).andReturn();
+			assertEquals(HttpStatus.OK.value(), mvcResult.getResponse().getStatus());
+			JSONObject resp = new JSONObject();
+			resp.put("message", "Player updated successful");
+			assertEquals(resp.toString(), mvcResult.getResponse().getContentAsString());
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Test update player REST end-point for player not found.
+	 * 
+	 */
+	@Test
+	public void updatePlayer_player_not_found() {
+		when(playerService.getPlayerById(anyLong())).thenReturn(null);
+		MvcResult mvcResult;
+		try {
+			mvcResult = mockMvc.perform(MockMvcRequestBuilders.put("/v1/player/1")
+					.content(new ObjectMapper().writeValueAsString(playerForm1)).contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaType.APPLICATION_JSON)).andReturn();
+			assertEquals(HttpStatus.NOT_FOUND.value(), mvcResult.getResponse().getStatus());
+			JSONObject resp = new JSONObject();
+			resp.put("error", "Player not found");
+			assertEquals(resp.toString(), mvcResult.getResponse().getContentAsString());
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Test delete player REST end-point for deletion successfully.
+	 * 
+	 */
+	@Test
+	public void deletePlayer_Ok() {
+		when(playerService.getPlayerById(anyLong())).thenReturn(player1);
+		MvcResult mvcResult;
+		try {
+			mvcResult = mockMvc.perform(MockMvcRequestBuilders.delete("/v1/player/1")
+					.content(new ObjectMapper().writeValueAsString(playerForm1)).contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaType.APPLICATION_JSON)).andReturn();
+			assertEquals(HttpStatus.OK.value(), mvcResult.getResponse().getStatus());
+			JSONObject resp = new JSONObject();
+			resp.put("message", "Player deleted successful");
+			assertEquals(resp.toString(), mvcResult.getResponse().getContentAsString());
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Test delete player REST end-point for deletion successfully.
+	 * 
+	 */
+	@Test
+	public void deletePlayer_player_not_found() {
+		when(playerService.getPlayerById(anyLong())).thenReturn(null);
+		MvcResult mvcResult;
+		try {
+			mvcResult = mockMvc.perform(MockMvcRequestBuilders.delete("/v1/player/1")
+					.content(new ObjectMapper().writeValueAsString(playerForm1)).contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaType.APPLICATION_JSON)).andReturn();
+			assertEquals(HttpStatus.NOT_FOUND.value(), mvcResult.getResponse().getStatus());
+			JSONObject resp = new JSONObject();
+			resp.put("error", "Player not found");
+			assertEquals(resp.toString(), mvcResult.getResponse().getContentAsString());
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private Date getDate(String date) {

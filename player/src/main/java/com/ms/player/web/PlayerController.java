@@ -111,7 +111,7 @@ public class PlayerController {
 			for (FieldError error : errors) {
 				resError.put(error.getField(), error.getDefaultMessage());
 			}
-			resp.put("error", resError);
+			resp.put("error", resError.toString());
 			return new ResponseEntity<>(resp.toString(), HttpStatus.BAD_REQUEST);
 		}
 

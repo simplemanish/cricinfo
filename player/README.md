@@ -12,26 +12,11 @@
 ```
 	 java -jar target\player-0.0.1-SNAPSHOT.jar
 ```
-4. Application will get started at port 8080, you can access endpoints
+4. Application will get started at port 8080, you can access the endpoints
+   
+6. Test the endpoints using swagger-ui http://localhost:8080/Api/swagger-ui/index.html
 	* Create Player:
-```
-	 http://localhost:8080/Api/v1/player
-```
-   
-	* Get Player Details:
-   
-```
-	 http://localhost:8080/Api/v1/player/1
-```
-  
-	* Update Player Details:
-
-```	
-	http://localhost:8080/Api/v1/player/1
-```
-  
-	* Delete Player:
-   
-```
-	 http://localhost:8080/Api/v1/player/1
-```
+   	* Get Player Details:
+     	* Update Player Details:
+ 	* Delete Player:
+ 

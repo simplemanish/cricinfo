@@ -17,6 +17,6 @@
 6. Test the endpoints using swagger-ui http://localhost:8080/Api/swagger-ui/index.html
 	* Create Player:
    	* Get Player Details:
-     	* Update Player Details:
+   	* Update Player Details:
  	* Delete Player:
  
